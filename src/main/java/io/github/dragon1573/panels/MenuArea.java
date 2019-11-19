@@ -79,20 +79,7 @@ public class MenuArea extends JMenuBar {
             public void actionPerformed(ActionEvent e) {
                 JFrame aboutFrame = new JFrame("关于");
                 JPanel aboutPanel = new JPanel(new GridLayout(1, 2));
-                // Add a picture into a JPanel
-                aboutPanel.add(new JPanel() {
-                    private static final long serialVersionUID = -3054630750364647400L;
-
-                    @Override
-                    protected void paintComponent(Graphics g) {
-                        super.paintComponent(g);
-                        ImageIcon icon = new ImageIcon("tradeMark.jpg");
-                        // Make sure the size of the picture is the same as the
-                        // size of the JPanel
-                        icon.setImage(icon.getImage().getScaledInstance(getWidth(), getHeight(), java.awt.Image.SCALE_AREA_AVERAGING));
-                        g.drawImage(icon.getImage(), 0, 0, this);
-                    }
-                });
+                // TODO: Add my GitHub Account Icon to the software.
                 setVersion();
                 JTextArea versionArea = new JTextArea(versionStr);
                 versionArea.setLineWrap(true);

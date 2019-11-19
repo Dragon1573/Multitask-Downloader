@@ -25,20 +25,25 @@ package io.github.dragon1573.threads;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.net.http.HttpConnectTimeoutException;
 
 import javax.swing.JOptionPane;
 
+import io.github.dragon1573.Index;
 import io.github.dragon1573.LoadProgress;
 
 /**
  * Downloader core component for multitasking downloads.
  *
  * @author Legend_1949
+ * @author Dragon1573
  * @version November 28, 2018
+ * @date 2019/11/20
  */
 public class DownThread implements Runnable {
     private URL sourceUrl;
@@ -52,9 +57,7 @@ public class DownThread implements Runnable {
      * @param localeFile
      *     A {@link File} which refer to the locale target.
      */
-    public DownThread(
-        String sourceAddress, File localeFile
-    ) {
+    public DownThread(String sourceAddress, File localeFile) {
         try {
             sourceUrl = new URL(sourceAddress);
         } catch (MalformedURLException e) {
@@ -69,22 +72,27 @@ public class DownThread implements Runnable {
             URLConnection sourceConnection = sourceUrl.openConnection();
             sourceConnection.setConnectTimeout(2000);
             if (sourceConnection.getHeaderField(0) == null) {
-                throw new Exception();
+                throw new HttpConnectTimeoutException("错误：资源连接异常！");
             } else {
                 // Download 4MB for each block.
                 byte[] dataBlock = new byte[4194304];
                 int blockSize;
-                InputStream jin = sourceConnection.getInputStream();
-                FileOutputStream jout;
+                InputStream in = sourceConnection.getInputStream();
+                FileOutputStream out;
                 // Confirm the size of the downloaded data.
                 long loadedSize = localeFile.length();
-                // If the downloaded file size is smaller than the resource
-                // size, the file is incomplete. So resume the download task.
+                /*
+                 If the downloaded file size is smaller than the resource
+                 size, the file is incomplete. So resume the download task.
+                 NOTICE: This comparision could not check if the resource
+                          and the downloaded file are the same.
+                          Unable to fix this myself.
+                */
                 if (loadedSize < sourceConnection.getContentLengthLong()) {
-                    jin.skip(loadedSize);
-                    jout = new FileOutputStream(localeFile, true);
+                    in.skip(loadedSize);
+                    out = new FileOutputStream(localeFile, true);
                 } else {
-                    jout = new FileOutputStream(localeFile, false);
+                    out = new FileOutputStream(localeFile, false);
                 }
                 LoadProgress detailPanel = new LoadProgress();
                 detailPanel.setLocal(localeFile);
@@ -92,15 +100,18 @@ public class DownThread implements Runnable {
                 detailPanel.setProgressRange(sourceConnection.getContentLength());
                 Thread detailThread = new Thread(detailPanel);
                 detailThread.start();
-                while ((blockSize = jin.read(dataBlock)) > 0) {
-                    jout.write(dataBlock, 0, blockSize);
+                while ((blockSize = in.read(dataBlock)) > 0) {
+                    out.write(dataBlock, 0, blockSize);
                 }
-                jout.close();
-                jin.close();
+                out.close();
+                in.close();
                 JOptionPane.showMessageDialog(null, localeFile.getName() + "下载完成！", "成功", JOptionPane.INFORMATION_MESSAGE);
             }
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(null, "资源不存在！", "错误", JOptionPane.ERROR_MESSAGE);
+        } catch (HttpConnectTimeoutException e) {
+            JOptionPane.showMessageDialog(null, e.getMessage(), "错误", JOptionPane.ERROR_MESSAGE);
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(null, "文件读写权限异常！", "错误", JOptionPane.ERROR_MESSAGE);
         }
+        --Index.totalTasks;
     }
 }

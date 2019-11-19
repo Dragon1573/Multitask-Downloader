@@ -41,7 +41,6 @@ public class LoadProgress extends JPanel implements Runnable {
     private JLabel remoteLabel;
     private JLabel localLabel;
     private JProgressBar loadBar;
-    private boolean isRunning = true;
 
     /**
      * The constructor
@@ -60,22 +59,14 @@ public class LoadProgress extends JPanel implements Runnable {
 
     @Override
     public void run() {
-        while (isRunning) {
+        while (loadBar.getValue() < loadBar.getMaximum()) {
             loadBar.setValue((int)localFile.length());
             try {
                 Thread.sleep(50);
-            } catch (InterruptedException ignored) {
-            }
-            if (loadBar.getValue() == loadBar.getMaximum()) {
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException ignored) {
-                }
-                Index.app.loadDetails.remove(this);
-                Index.app.loadDetails.repaint();
-                return;
-            }
+            } catch (InterruptedException ignored) {}
         }
+        Index.app.loadDetails.remove(this);
+        Index.app.loadDetails.repaint();
     }
 
     /**
@@ -103,12 +94,5 @@ public class LoadProgress extends JPanel implements Runnable {
     public void setRemote(String location) {
         remoteLabel.setText(remoteLabel.getText() + location);
         revalidate();
-    }
-
-    /**
-     * Stop the Runnable thread.
-     */
-    public void stop() {
-        isRunning = false;
     }
 }

@@ -37,26 +37,31 @@ import io.github.dragon1573.threads.DownThread;
  * The <code>ActionListener</code> of <i>New Task</i> action.
  *
  * @author Legend_1949
- * @version November 28, 2018
+ * @author Dragon1573
+ * @since November 28, 2018
+ * @date 2019/11/20
  */
 public class NewTaskListener implements ActionListener {
     @Override
     public void actionPerformed(ActionEvent e) {
-        String sourceAddress = JOptionPane.showInputDialog(null, "资源地址：", "新建下载", JOptionPane.QUESTION_MESSAGE);
-        if ("".equalsIgnoreCase(sourceAddress)) {
-            JOptionPane.showMessageDialog(null, "请输入资源地址！", "警告", JOptionPane.ERROR_MESSAGE);
-        } else if (Index.totalTasks + 1 > Index.MAX_TASKS) {
-            JOptionPane.showMessageDialog(null, "多任务数量满，请等待前序任务完成！", "警告", JOptionPane.ERROR_MESSAGE);
-        } else if (sourceAddress != null) {
-            JFileChooser saveAsFile = new JFileChooser();
-            int choice = saveAsFile.showSaveDialog(null);
-            if (choice == JFileChooser.APPROVE_OPTION) {
-                File localeFilePath = saveAsFile.getCurrentDirectory();
-                String localeFileName = saveAsFile.getSelectedFile().getName();
-                localeFilePath = new File(localeFilePath, localeFileName);
-                DownThread task = new DownThread(sourceAddress, localeFilePath);
-                new Thread(task).start();
+        ++Index.totalTasks;
+        if (Index.totalTasks <= Index.MAX_TASKS) {
+            String sourceAddress = JOptionPane.showInputDialog(null, "资源地址：", "新建下载", JOptionPane.QUESTION_MESSAGE);
+            if ("".equalsIgnoreCase(sourceAddress)) {
+                JOptionPane.showMessageDialog(null, "请输入资源地址！", "警告", JOptionPane.WARNING_MESSAGE);
+            } else if (sourceAddress != null) {
+                JFileChooser saveAsFile = new JFileChooser();
+                int choice = saveAsFile.showSaveDialog(null);
+                if (choice == JFileChooser.APPROVE_OPTION) {
+                    File localeFilePath = saveAsFile.getCurrentDirectory();
+                    String localeFileName = saveAsFile.getSelectedFile().getName();
+                    localeFilePath = new File(localeFilePath, localeFileName);
+                    DownThread task = new DownThread(sourceAddress, localeFilePath);
+                    new Thread(task).start();
+                }
             }
+        } else {
+            JOptionPane.showMessageDialog(null, "以达到最大并行任务数量，请等待前序任务完成！", "警告", JOptionPane.WARNING_MESSAGE);
         }
     }
 }
