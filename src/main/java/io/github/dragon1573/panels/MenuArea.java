@@ -37,7 +37,9 @@ import io.github.dragon1573.listeners.NewTaskListener;
  * The Menu Bar in the window of application.
  *
  * @author Legend_1949
- * @version November 28, 2018
+ * @author Dragon1573
+ * @since November 28, 2018
+ * @date 2019/11/22
  */
 public class MenuArea extends JMenuBar {
     private static final long serialVersionUID = -3997746759666524535L;
@@ -114,7 +116,7 @@ public class MenuArea extends JMenuBar {
     private void setVersion() {
         versionStr = "传奇下载\n";
         versionStr += "\n";
-        versionStr += "版本：v2019.11\n";
+        versionStr += "版本：v1.1-beta2\n";
         versionStr += "©版权所有 2019 Dragon_1573\n";
         versionStr += "遵循 MIT 开源许可证限制。";
     }

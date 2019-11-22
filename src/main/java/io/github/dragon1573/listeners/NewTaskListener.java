@@ -26,9 +26,11 @@ package io.github.dragon1573.listeners;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.nio.file.Path;
 
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
+import javax.swing.filechooser.FileNameExtensionFilter;
 
 import io.github.dragon1573.Index;
 import io.github.dragon1573.threads.DownThread;
@@ -38,25 +40,52 @@ import io.github.dragon1573.threads.DownThread;
  *
  * @author Legend_1949
  * @author Dragon1573
+ * @date 2019/11/22
  * @since November 28, 2018
- * @date 2019/11/20
  */
 public class NewTaskListener implements ActionListener {
     @Override
     public void actionPerformed(ActionEvent e) {
         ++Index.totalTasks;
         if (Index.totalTasks <= Index.MAX_TASKS) {
+            // Get the target URL.
             String sourceAddress = JOptionPane.showInputDialog(null, "资源地址：", "新建下载", JOptionPane.QUESTION_MESSAGE);
+            String fileName = sourceAddress.replaceFirst(".+/", "");
+            final String extName = sourceAddress.replaceFirst(".+\\.", "");
             if ("".equalsIgnoreCase(sourceAddress)) {
+                // Target URL is empty.
                 JOptionPane.showMessageDialog(null, "请输入资源地址！", "警告", JOptionPane.WARNING_MESSAGE);
-            } else if (sourceAddress != null) {
+            } else {
+                // Create an UI and users can choose a path to save the file.
                 JFileChooser saveAsFile = new JFileChooser();
+                // Filter the extension name.
+                saveAsFile.setFileFilter(
+                    new FileNameExtensionFilter(
+                        extName.toUpperCase()
+                            + " File (*." + extName
+                            + ")",
+                        extName
+                    )
+                );
+                // Set default directory.
+                saveAsFile.setCurrentDirectory(new File("."));
+                // Set default filename.
+                saveAsFile.setSelectedFile(new File(fileName));
                 int choice = saveAsFile.showSaveDialog(null);
                 if (choice == JFileChooser.APPROVE_OPTION) {
-                    File localeFilePath = saveAsFile.getCurrentDirectory();
-                    String localeFileName = saveAsFile.getSelectedFile().getName();
-                    localeFilePath = new File(localeFilePath, localeFileName);
-                    DownThread task = new DownThread(sourceAddress, localeFilePath);
+                    File localeFilePath = saveAsFile.getSelectedFile();
+                    // Notice: Path got from Java methods are different from that by user input.
+                    fileName = localeFilePath.getAbsolutePath().replaceFirst(".+\\\\", "");
+                    if (!fileName.endsWith(extName)) {
+                        localeFilePath = new File(saveAsFile.getCurrentDirectory(), fileName + "." + extName);
+                    }
+                    File localTempPath;
+                    if (fileName.endsWith(extName)) {
+                        localTempPath = new File(saveAsFile.getCurrentDirectory(), fileName.replace(extName, "sha"));
+                    } else {
+                        localTempPath = new File(saveAsFile.getCurrentDirectory(), fileName + ".sha");
+                    }
+                    DownThread task = new DownThread(sourceAddress, localeFilePath, localTempPath);
                     new Thread(task).start();
                 }
             }

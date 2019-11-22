@@ -23,14 +23,12 @@
  */
 package io.github.dragon1573.threads;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.http.HttpConnectTimeoutException;
+import java.util.Scanner;
 
 import javax.swing.JOptionPane;
 
@@ -43,11 +41,13 @@ import io.github.dragon1573.LoadProgress;
  * @author Legend_1949
  * @author Dragon1573
  * @version November 28, 2018
- * @date 2019/11/20
+ * @date 2019/11/22
  */
 public class DownThread implements Runnable {
-    private URL sourceUrl;
     private File localeFile;
+    private File tempFile;
+    private URL sourceUrl;
+    private boolean isAppend = false;
 
     /**
      * The constructor.
@@ -57,18 +57,36 @@ public class DownThread implements Runnable {
      * @param localeFile
      *     A {@link File} which refer to the locale target.
      */
-    public DownThread(String sourceAddress, File localeFile) {
+    public DownThread(String sourceAddress, File localeFile, File tempFile) {
         try {
-            sourceUrl = new URL(sourceAddress);
+            this.sourceUrl = new URL(sourceAddress);
         } catch (MalformedURLException e) {
             JOptionPane.showMessageDialog(null, "非法资源地址！", "错误", JOptionPane.ERROR_MESSAGE);
         }
         this.localeFile = localeFile;
+        this.tempFile = tempFile;
+        // Check if the temp metadata is exist.
+        try (Scanner scanner = new Scanner(tempFile)) {
+            String unfinishedSource = scanner.next();
+            // Toggle the switch of appending or overwriting.
+            isAppend = (sourceAddress.equals(unfinishedSource));
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+        // If they are different, refresh the metadata.
+        if (!isAppend) {
+            try (FileWriter writer = new FileWriter(tempFile)) {
+                writer.write(sourceAddress);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     @Override
     public void run() {
         try {
+            // Create a connection with the resource.
             URLConnection sourceConnection = sourceUrl.openConnection();
             sourceConnection.setConnectTimeout(2000);
             if (sourceConnection.getHeaderField(0) == null) {
@@ -84,11 +102,8 @@ public class DownThread implements Runnable {
                 /*
                  If the downloaded file size is smaller than the resource
                  size, the file is incomplete. So resume the download task.
-                 NOTICE: This comparision could not check if the resource
-                          and the downloaded file are the same.
-                          Unable to fix this myself.
                 */
-                if (loadedSize < sourceConnection.getContentLengthLong()) {
+                if (loadedSize < sourceConnection.getContentLengthLong() && isAppend) {
                     in.skip(loadedSize);
                     out = new FileOutputStream(localeFile, true);
                 } else {
@@ -112,6 +127,7 @@ public class DownThread implements Runnable {
         } catch (IOException e) {
             JOptionPane.showMessageDialog(null, "文件读写权限异常！", "错误", JOptionPane.ERROR_MESSAGE);
         }
+        this.tempFile.delete();
         --Index.totalTasks;
     }
 }
